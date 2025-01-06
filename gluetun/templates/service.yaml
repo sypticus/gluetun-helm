@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gluetun.fullname" . }}
+  labels:
+    {{- include "gluetun.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  ports:
+    - port: {{ .Values.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- if .Values.shadowsocks.enabled }}
+    - port: {{ .Values.service.tcp_port }}
+      targetPort: shadowsockstcp
+      protocol: TCP
+      name: shadowsockstcp
+    - port: {{ .Values.service.udp_port }}
+      targetPort: shadowsocksudp
+      protocol: UDP
+      name: shadowsocksudp
+    {{- end }}
+  selector:
+    {{- include "gluetun.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,120 @@
+## This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+image:
+  repository: "ghcr.io/qdm12/gluetun"
+  pullPolicy: IfNotPresent
+  tag: "v3.40.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+
+proxy: #Set up the container as a proxy that can be used on your lan.
+  enabled: true
+  secret_name: #Secret name with proxy Username and password, stored on keys 'proxyuser' and 'proxypasswd'
+  user:
+  password:
+
+  stealth: true  #Stealth mode means HTTP proxy headers are not added to your requests
+  log: false  #Logs every tunnel requests
+  listening_address: ":8888" #Internal listening address for the HTTP proxy
+
+
+vpn:
+  provider: "mullvad" #airvpn, custom, fastestvpn, ivpn, mullvad, nordvpn, protonvpn, surfshark or windscribe
+  type: openvpn # wireguard or openvpn
+  openvpn:
+    secret_name:   #Secret name with openVPN Username and password, stored on keys 'openvpnuser' and 'openvpnpasswd'
+    user:    #Better to use the secret, but you can override with these.
+    password:
+
+
+  #wireguard:
+  #  addresses: 10.64.222.21/32
+  #  secret_name: "mullvad-key" #Name of K8s Secret with the Private Key in it. should be on key 'wgprivatekey'
+  #  private_key: # You shouldn't use this, create a K8s secret instead, but if you must...
+  dnsAddress: "10.64.0.1" #Mullvad DNS. Change this to your provider
+
+  provider_extra_env:  #Extra environmentals vars needed for provider. https://github.com/qdm12/gluetun-wiki/tree/main/setup/providers
+  #- name: SERVER_CITIES
+  #  value: "AMSTERDAM"
+
+
+
+
+shadowsocks:
+  enabled: false
+#  cipher: #chacha20-ietf-poly1305, aes-128-gcm, aes-256-gcm
+#  password_secret:  #Name of K8s Secret with the Password in it. should be on key 'shadowpass'
+#  listening_address: ":8388"
+#  tcp_port: 8388
+#  udp_port: 8388
+
+
+
+extra_env: []
+  #- name: SOME_PARAM
+#  value: "some value"
+
+
+
+#This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  capabilities:
+    add: [ "NET_ADMIN" ]
+
+
+resources: {}
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  enabled: false
+  httpGet:
+    path: /
+    port: http
+
+readinessProbe:
+  enabled: false
+  httpGet:
+    path: /
+    port: http
+
+#This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+
+volumes: []
+
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+service:
+  enabled: true
+  type: ClusterIP
+  httpPort: 8888
+
+  loadBalancerIP: ""
+
+
+
+
+

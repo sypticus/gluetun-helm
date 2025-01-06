@@ -1,0 +1,176 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gluetun.fullname" . }}
+  labels:
+    {{- include "gluetun.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gluetun.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gluetun.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gluetun.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.httpPort }}
+              protocol: TCP
+          {{- if .Values.shadowsocks.enabled }}
+            - name: shadowsockstcp
+              containerPort: {{ .Values.shadowsocks.tcp_port }}
+              protocol: TCP
+            - name: shadowsocksudp
+              containerPort: {{ .Values.shadowsocks.udp_port }}
+              protocol: UDP
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: {{ .Values.vpn.provider }}
+            - name: VPN_TYPE
+              value: {{ .Values.vpn.type }}
+
+            - name: DNS_ADDRESS
+              value: {{ .Values.vpn.dnsAddress}}
+
+          {{- if eq .Values.vpn.type "wireguard" }}
+            - name: WIREGUARD_ADDRESSES
+              value: {{ .Values.vpn.wireguard.addresses }}
+            {{- if .Values.vpn.wireguard.secret_name }}
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.wireguard.secret_name }}
+                  key: wgprivatekey
+            {{- else if .Values.vpn.wireguard.private_key }}
+            - name: WIREGUARD_PRIVATE_KEY
+              value: {{ .Values.vpn.wireguard.private_key }}
+            {{- end }}
+          {{- end }}
+
+          {{- if eq .Values.vpn.type "openvpn" }}
+
+            {{- if  .Values.vpn.openvpn.secret_name}}
+            - name: OPENVPN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.openvpn.secret_name }}
+                  key: openvpnuser
+                  optional: true
+            - name: OPENVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.openvpn.secret_name }}
+                  key: openvpnpasswd
+                  optional: true
+            {{- else if .Values.vpn.openvpn.user}}
+            - name: OPENVPN_USER
+              value: {{ quote .Values.vpn.openvpn.user }}
+            - name: OPENVPN_PASSWORD
+              value: {{ quote .Values.vpn.openvpn.password }}
+            {{- end }}
+
+            {{- with .Values.vpn.provider_extra_env }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+          {{- end }}
+          {{- if .Values.proxy.enabled }}
+            - name: HTTPPROXY
+              value: "on"
+            {{- if .Values.proxy.user }}
+            - name: HTTPPROXY_USER
+              value: {{ .Values.proxy.user }}
+
+            - name: HTTPPROXY_PASSWORD
+              value: {{ .Values.proxy.user }}
+
+            {{- else if .Values.proxy.proxy_secret }}
+            - name: HTTPPROXY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.proxy.secret_name }}
+                  key: proxyuser
+            - name: HTTPPROXY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.proxy.secret_name }}
+                  key: proxypasswd
+            {{- end }}
+
+
+            - name: HTTPPROXY_LISTENING_ADDRESS
+              value: {{ .Values.proxy.listening_address }}
+
+            {{- if .Values.proxy.log }}
+            - name: HTTPPROXY_LOG
+              value: "on"
+            {{- end }}
+
+            {{- if .Values.proxy.stealth }}
+            - name: HTTPPROXY_STEALTH
+              value: "on"
+            {{- end }}
+
+          {{- end }}
+
+          {{- with .Values.extra_env }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
