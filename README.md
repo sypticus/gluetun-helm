@@ -1,6 +1,6 @@
 # Gluetun VPN client
 
-This is a helm chart for [Gluetun](https://github.com/qdm12/gluetun), a project by Quentin McGaw
+This is a helm chart for [Gluetun](https://github.com/qdm12/gluetun).
 This is helm chart is still a project under construction, and is definitely beta.
 
 Initially, this chart sets up a VPN proxy which can be reached from inside the K8s cluster, 
