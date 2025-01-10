@@ -33,7 +33,7 @@ In order to set the correct values for your instance, create a values.yaml to ov
 This will also allow you to create a service that you can forward calls to.
 
 ```console
-helm install gluetun-proxy ./gluetun-helm -f my_values.yaml
+helm install gluetun-proxy ./gluetun-helm/gluetun -f my_values.yaml
 ```
 
 
