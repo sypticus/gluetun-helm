@@ -12,7 +12,7 @@ https://github.com/sypticus/gluetun-helm.git
 
 ```console
 git clone https://github.com/sypticus/gluetun-helm.git
-helm install gluetun-proxy ./gluetun-helm --set vpn.openvpn.user=$MULLVAD_ACCOUNT_NUMBER -n proxy --create-namespace`
+helm install gluetun-proxy ./gluetun-helm/gluetun --set vpn.openvpn.user=$MULLVAD_ACCOUNT_NUMBER -n proxy --create-namespace`
 ```
 
 This may take a minute or two to start up. 
